@@ -20,13 +20,20 @@ app.get("/", function (request, response) {
 app.post("/getPage",  async function (request, response) {
 
   const blockId = request.body.dbName;
-  const requestResponse = await notion.blocks.children.list({
+
+  const page = await notion.blocks.retrieve({
+    block_id: blockId,
+    page_size: 50,
+  });
+
+  const childrenList = await notion.blocks.children.list({
     block_id: blockId,
     page_size: 50,
   });
   //console.log(requestResponse);
   //printBlockText(requestResponse.results)
-  const changeBlocksForTextList = changeBlocksForText(requestResponse.results)
+  const changeBlocksForTextList = changeBlocksForText(page, childrenList.results)
+ 
 
   changeBlocksForTextList.then(
     function(value) { response.json({message: "success!", data:  value})},
@@ -34,17 +41,38 @@ app.post("/getPage",  async function (request, response) {
   );
 }) 
 
-async function getPageById(id) {
+async function getPageChildrenById(id) {
   console.log("Retrieving page (async)...")
   
   const blockId = id;
-  const requestResponse = await notion.blocks.children.list({
+  const children = await notion.blocks.children.list({
     block_id: blockId,
     page_size: 50,
   });
 
-  return requestResponse.results
+  return children.results
 }
+
+async function getPageById(id) {
+  console.log("Retrieving page (async)...")
+  
+  const blockId = id;
+  const page = await notion.blocks.retrieve({
+    block_id: blockId,
+    page_size: 50,
+  });
+
+  return page
+}
+
+async function changeChildrenBlocksForTextListById(id) {
+  const page = await getPageById(id)
+  const children = await getPageChildrenById(id)
+  const changeBlocksForTextList = await changeBlocksForText(page, children)
+  return changeBlocksForTextList;
+}
+
+
 
 
 // app.post("/getPage",  async function (request, response) {
@@ -67,6 +95,7 @@ async function getTextFromBlock (block){
 
   // Get rich text from blocks that support it
   
+
   hasRichText = false;
   try{
     block[block.type].rich_text;
@@ -76,33 +105,58 @@ async function getTextFromBlock (block){
     hasRichText = false;
   }
 
+  // console.log("\n\nblock: " + JSON.stringify(block))
+  
+
   if (hasRichText && block[block.type].rich_text) {
+    if(block.type == "toggle"){
+      // console.log("\n\nblock: " + JSON.stringify(block))
+      const page = await getPageById(block.id);
+      const childrenBlockTexts = await getPageChildrenById(block.id);
+      const changeBlocksForTextList = await changeBlocksForText(page, childrenBlockTexts, true);
+      console.log(changeBlocksForTextList);
+      return changeBlocksForTextList;
+    }
     // This will be an empty string if it's an empty line.
     text = getPlainTextFromRichText(block[block.type].rich_text)
+    console.log("Block type: " + block.type + "  -  " + text)
+
   }
   // Get text for block types that don't have rich text
   else {
+
     switch (block.type) {
       case "unsupported":
         // The public API does not support all block types yet
         text = "[Unsupported block type]"
         break
+      case "paragraph":
+        text = block.paragraph.text
+        break
       case "bookmark":
         text = block.bookmark.url
         break
       case "child_database":
-        text = block.child_database.title
+        //text = block.child_database.title
+        text = "child_database ----------------------------------------------"
+
         // Use "Query a database" endpoint to get db rows: https://developers.notion.com/reference/post-database-query
         // Use "Retrieve a database" endpoint to get additional properties: https://developers.notion.com/reference/retrieve-a-database
         break
       case "child_page":
-        const page = await getPageById(block.id)
-        const changeBlocksForTextList = await changeBlocksForText(page)
-        return changeBlocksForTextList;
+        return await changeChildrenBlocksForTextListById(block.id);
       case "embed":
       case "video":
       case "file":
       case "image":
+      case "quote":
+      case "bulleted_list_item":
+        // console.log(block)
+        text = block[block.type].text
+        break
+      case "numbered_list_item":
+        text = block[block.type].text
+        break
       case "pdf":
         //text = getMediaSourceText(block)
         break
@@ -134,18 +188,22 @@ async function getTextFromBlock (block){
         text = "No text available"
         break
       default:
-        console.log(block)
+        console.log("Default block: " + block)
         text = "[Needs case added]"
         break
     }
   }
 
+
   switch(block.type){
-    case "heading_1": return [["h1", text]];
-    case "heading_2": return [["h2", text]];
-    case "heading_3": return [["h3", text]];
+    case "heading_1": return [["h2", text]];
+    case "heading_2": return [["h3", text]];
+    case "heading_3": return [["h4", text]];
     case "paragraph": return [["p", text]];
-    default: return ["p", text];
+    case "bulleted_list_item": return [["li", text]];
+    case "numbered_list_item": return [["li", text]];
+    case "quote": return [["blockquote", text]];
+    default: {console.log(block.type + "  -  " + text); return ["p", text]};
   }
 
 }
@@ -180,23 +238,25 @@ function getBlockById(id) {
 //   }
 // }
 
-async function changeBlocksForText(blocks) {
+async function changeBlocksForText(page, children, isToggle = false) {
 
   let textBlocks = []
-  console.log("number of blocks: " + blocks.length)
-  for (let i = 0; i < blocks.length; i++) {
-    //console.log( i + ". BLOCK------------------------------------------------------------")
-    const texts = await getTextFromBlock(blocks[i])
-    // console.log(texts)
+  if(!isToggle)
+  {
+    textBlocks = [["h1", page.child_page.title]]
+  }else
+  {
+    console.log(JSON.stringify(page))
+    textBlocks = [["h2", page.toggle.rich_text[0].plain_text]]
+  }
+  
+  for (let i = 0; i < children.length; i++) {
+    const texts = await getTextFromBlock(children[i])
     for(let j = 0; j < texts.length; j++){
       textBlocks.push(texts[j])
     }
-    //textBlocks.concat(value)
-    // console.log(texts)
-    // textBlocks = textBlocks.concat(texts)
-    //console.log("-----------\n\n")
   }
-  console.log(textBlocks)
+  // console.log(textBlocks)
   
   return textBlocks
 }

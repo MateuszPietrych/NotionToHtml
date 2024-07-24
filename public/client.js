@@ -71,7 +71,6 @@ const appendBlocksResponse = function (apiResponse, el) {
 getPageForm.onsubmit = async function (event) {
   event.preventDefault()
 
-  document.getElementById("test").innerText = "XDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDddd";
   const dbName = event.target.dbName.value
   const body = JSON.stringify({ dbName })
 
@@ -101,12 +100,21 @@ getPageForm.onsubmit = async function (event) {
 
 function makeHtmlFromTexts(texts) {
 
-  const mainDiv = document.getElementById("test")
+  const mainDiv = document.getElementById("main")
   textBlocks = []
   for (let i = 0; i < texts.length; i++) {
-    const newParagraphSuccessMsg = document.createElement(texts[i][0])
-    newParagraphSuccessMsg.textContent = texts[i][1]
-    mainDiv.appendChild(newParagraphSuccessMsg)
+    if(texts[i]) {
+      const newParagraphSuccessMsg = document.createElement(texts[i][0])
+      // newParagraphSuccessMsg.textContent = texts[i][1]
+      
+      if(texts[1] != null) { 
+        newParagraphSuccessMsg.textContent = texts[i][1]
+      } else {
+        newParagraphSuccessMsg.textContent = "\n"
+      }
+      mainDiv.appendChild(newParagraphSuccessMsg)
+    }
+   
   }
   
   return textBlocks

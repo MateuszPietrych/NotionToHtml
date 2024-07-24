@@ -9,93 +9,59 @@
 
     <title>Notion integration demo</title>
     <!-- import the webpage's stylesheet -->
-    <link rel="stylesheet" href="/style.css" />
+    
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
 
     <!-- import the webpage's client-side javascript file -->
     <script src="/client.js" defer></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   </head>
   <body>
-    <header>
-      <h1>Notion internal integration demo</h1>
-    </header>
+    <main id="content">
+      <h3>Config</h3>
+      <form id="getPageForm">    <!-- databaseForm-->
+        <label for="dbName">Notion Page ID: </label>
+        <input type="text" id="dbName" />
+        <input type="submit" />
+      </form>
+      <button class="btn btn-primary" id="saveButton" value="Save as PDF" >Save as PDF</button>
 
-    <main>
-      <h2>Goals</h2>
-      <p>
-        Use this demo to see how to incorporate Notion's public API into your
-        app. Build on this demo as needed to meet your own app's requirements!
-      </p>
-      <p>
-        Open the Notion page set in your environment variables to see workspace
-        updates in real-time. :)
-      </p>
+      <div class="container text-left">
+        <div class="row">
+          <div class="col-1">
+            
+          </div>
+          <div id="main" class="col-10">
+          
+             
+          </div>
+          <div class="col-1">
+            
+          </div>
 
-      <p id="test">
-
-      </p>
-      <table>
-        <tr>
-          <th>Step</th>
-          <th>Response</th>
-        </tr>
-        <tr>
-          <td>
-            <h3>1. Create a new database</h3>
-            <form id="getPageForm">    <!-- databaseForm-->
-              <label for="dbName">Database name</label>
-              <input type="text" id="dbName" />
-              <input type="submit" />
-            </form>
-          </td>
-          <!-- The database form response will be appended here after submitting it -->
-          <td id="dbResponse"></td>
-        </tr>
-        <tr>
-          <td>
-            <h3>2. Add a page to the database</h3>
-            <form id="pageForm">
-              <label for="newPageDB">Parent DB ID</label>
-              <input type="text" id="newPageDB" />
-              <label for="newPageName">New page name</label>
-              <input type="text" id="newPageName" />
-              <label for="header">Header 1</label>
-              <input type="text" id="header" />
-              <input type="submit" />
-            </form>
-          </td>
-          #The page form response will be appended here after submitting it 
-          <td id="pageResponse"></td>
-        </tr> 
-        <tr>
-          <td>
-            <h3>3. Add content to the page</h3>
-            <form id="blocksForm">
-              <label for="pageID">Page ID</label>
-              <input type="text" id="pageID" />
-              <label for="content">Content</label>
-              <input type="text" id="content" />
-              <input type="submit" />
-            </form>
-          </td>
-          # The page content/blocks form response will be appended here after submitting it 
-          <td id="blocksResponse"></td>
-        </tr>
-        <tr>
-          <td>
-            <h3>4. Add a comment to the content</h3>
-            <form id="commentForm">
-              <label for="pageIDComment">Page ID</label>
-              <input type="text" id="pageIDComment" />
-              <label for="comment">Comment</label>
-              <input type="text" id="comment" />
-              <input type="submit" />
-            </form>
-          </td>
-          # The comment form response will be appended here after submitting it 
-          <td id="commentResponse"></td>
-        </tr>
-        
-      </table>
+        </div>
+      </div>
+      
+     
     </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script>
+      document.getElementById('saveButton').addEventListener('click', function () {
+        // Get the element to convert
+        const element = document.getElementById('content');
+  
+        const options = {
+        margin: [1, 0, 1, 0],            // Margins in inches
+        filename: 'myfile.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1 },  // Higher scale for better quality
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      // Convert the element to PDF with options
+      html2pdf().from(element).set(options).save();
+      });
+    </script>
   </body>
+  
 </html>
