@@ -5,10 +5,7 @@
  */
 
 // Forms
-// const dbForm = document.getElementById("databaseForm")
-// const pageForm = document.getElementById("pageForm")
-// const blocksForm = document.getElementById("blocksForm")
-// const commentForm = document.getElementById("commentForm")
+
 const getPageForm = document.getElementById("getPageForm")
 
 // Table cells where API responses will be appended
@@ -16,6 +13,8 @@ const dbResponseEl = document.getElementById("dbResponse")
 const pageResponseEl = document.getElementById("pageResponse")
 const blocksResponseEl = document.getElementById("blocksResponse")
 const commentResponseEl = document.getElementById("commentResponse")
+
+
 
 /**
  * Functions to handle appending new content to /views/index.html
@@ -81,22 +80,44 @@ getPageForm.onsubmit = async function (event) {
     },
     body,
   })
-  console.log("1.")
   const newDBData = await newDBResponse.json()
-  console.log("2.")
   console.log(newDBData.data);
-  console.log("3.")
-  // const prepareTexts = prepareTexts(newDBData.data)
 
   makeHtmlFromTexts(newDBData.data)
 
-  // document.getElementById("test").innerText = newDBData.data;
-  
+  var element = document.getElementById('form');
+  if (element) {
+      element.remove();
+  }
 
-  // appendApiResponse(newDBData, dbResponseEl)
+  
+  htmlString = '<!DOCTYPE html><html lang="en"><head>'+  document.head.innerHTML + '</head>'+ '<body>'+  document.body.innerHTML + '</body>'+'</html>';
+
+  const data = JSON.stringify({htmlString});
+
+  console.log("Length of string: " +  data.length);
+
+  const pdfResponse = await fetch("/toPdf", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: data,
+  })
+
 }
 
 
+
+
+
+
+function addEnter(){
+    const mainDiv = document.getElementById("main")
+    const newParagraphSuccessMsg = document.createElement("br")
+    mainDiv.appendChild(newParagraphSuccessMsg)
+  
+}
 
 function makeHtmlFromTexts(texts) {
 
@@ -105,10 +126,18 @@ function makeHtmlFromTexts(texts) {
   for (let i = 0; i < texts.length; i++) {
     if(texts[i]) {
       const newParagraphSuccessMsg = document.createElement(texts[i][0])
-      // newParagraphSuccessMsg.textContent = texts[i][1]
-      
+      if(texts[i][0] != "h1") {
+        addEnter();
+      }
+
+  
       if(texts[1] != null) { 
-        newParagraphSuccessMsg.textContent = texts[i][1]
+        if(texts[i][0] == "img" && texts[i][1].startsWith("http")) {
+          console.log(texts[i][1])
+          newParagraphSuccessMsg.src = texts[i][1]
+        }else {
+          newParagraphSuccessMsg.textContent = texts[i][1]
+        }
       } else {
         newParagraphSuccessMsg.textContent = "\n"
       }
@@ -119,9 +148,6 @@ function makeHtmlFromTexts(texts) {
   
   return textBlocks
 }
-
-
-
 
 // // Attach submit event to each form
 // dbForm.onsubmit = async function (event) {

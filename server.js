@@ -1,6 +1,9 @@
 require("dotenv").config()
 const express = require("express")
 const app = express()
+const { chromium } = require('playwright'); 
+
+
 
 const { Client } = require("@notionhq/client")
 const notion = new Client({ auth: process.env.NOTION_KEY })
@@ -8,14 +11,35 @@ const notion = new Client({ auth: process.env.NOTION_KEY })
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static("public"))
-app.use(express.json()) // for parsing application/json
+// app.use(express.json()) // for parsing application/json
+
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (request, response) {
   response.sendFile(__dirname + "/views/index.html")
 })
 
+app.post("/toPdf", async function (request, response) {
 
+  const html = request.body.htmlString;
+  
+  const browser = await chromium.launch({ headless: true });
+
+  const context = await browser.newContext();
+
+  const page = await context.newPage();
+
+  await page.setContent(html);
+
+  await page.pdf({ path: 'invoice.pdf', format: 'A4', margin: { top: '1.5cm', right: '1.5cm', bottom: '2cm', left: '1.5cm' } });
+
+  // do something ...
+
+  await browser.close();
+  response.json({message: "success!", data: "test"})
+})
 
 app.post("/getPage",  async function (request, response) {
 
@@ -30,8 +54,6 @@ app.post("/getPage",  async function (request, response) {
     block_id: blockId,
     page_size: 50,
   });
-  //console.log(requestResponse);
-  //printBlockText(requestResponse.results)
   const changeBlocksForTextList = changeBlocksForText(page, childrenList.results)
  
 
@@ -42,7 +64,6 @@ app.post("/getPage",  async function (request, response) {
 }) 
 
 async function getPageChildrenById(id) {
-  console.log("Retrieving page (async)...")
   
   const blockId = id;
   const children = await notion.blocks.children.list({
@@ -54,7 +75,6 @@ async function getPageChildrenById(id) {
 }
 
 async function getPageById(id) {
-  console.log("Retrieving page (async)...")
   
   const blockId = id;
   const page = await notion.blocks.retrieve({
@@ -73,18 +93,6 @@ async function changeChildrenBlocksForTextListById(id) {
 }
 
 
-
-
-// app.post("/getPage",  async function (request, response) {
-
-//   const blockId = request.body.dbName;
-//   const requestResponse = await notion.blocks.retrieve({
-//     block_id: blockId,
-//   });
-//   console.log(requestResponse);
-
-//   response.json({message: "success!", data: requestResponse })
-// })
 const getPlainTextFromRichText = richText => {
   return richText.map(t => t.plain_text).join("")
   // Note: A page mention will return "Undefined" as the page name if the page has not been shared with the integration. See: https://developers.notion.com/reference/block#mention
@@ -114,12 +122,11 @@ async function getTextFromBlock (block){
       const page = await getPageById(block.id);
       const childrenBlockTexts = await getPageChildrenById(block.id);
       const changeBlocksForTextList = await changeBlocksForText(page, childrenBlockTexts, true);
-      console.log(changeBlocksForTextList);
       return changeBlocksForTextList;
     }
     // This will be an empty string if it's an empty line.
     text = getPlainTextFromRichText(block[block.type].rich_text)
-    console.log("Block type: " + block.type + "  -  " + text)
+    // console.log("Block type: " + block.type + "  -  " + text)
 
   }
   // Get text for block types that don't have rich text
@@ -133,9 +140,9 @@ async function getTextFromBlock (block){
       case "paragraph":
         text = block.paragraph.text
         break
-      case "bookmark":
-        text = block.bookmark.url
-        break
+      // case "bookmark":
+      //   text = block.bookmark.url
+      //   break
       case "child_database":
         //text = block.child_database.title
         text = "child_database ----------------------------------------------"
@@ -145,10 +152,22 @@ async function getTextFromBlock (block){
         break
       case "child_page":
         return await changeChildrenBlocksForTextListById(block.id);
-      case "embed":
-      case "video":
-      case "file":
+      // case "embed":
+      // case "video":
+      // case "file":
       case "image":
+        // text = block.image.file
+        const jsonString = JSON.stringify(block);
+        const urlMatch = jsonString.match(/"url":"(.*?)"/);
+
+        if (urlMatch && urlMatch[1]) {
+          const url = urlMatch[1];
+          text = url;
+        } else {
+          console.log('URL not found');
+        }
+          
+        break
       case "quote":
       case "bulleted_list_item":
         // console.log(block)
@@ -157,38 +176,38 @@ async function getTextFromBlock (block){
       case "numbered_list_item":
         text = block[block.type].text
         break
-      case "pdf":
-        //text = getMediaSourceText(block)
-        break
-      case "equation":
-        text = block.equation.expression
-        break
-      case "link_preview":
-        text = block.link_preview.url
-        break
-      case "synced_block":
-        // Provides ID for block it's synced with.
-        text = block.synced_block.synced_from
-          ? "This block is synced with a block with the following ID: " +
-            block.synced_block.synced_from[block.synced_block.synced_from.type]
-          : "Source sync block that another blocked is synced with."
-        break
-      case "table":
-        // Only contains table properties.
-        // Fetch children blocks for more details.
-        text = "Table width: " + block.table.table_width
-        break
-      case "table_of_contents":
-        // Does not include text from ToC; just the color
-        text = "ToC color: " + block.table_of_contents.color
-        break
-      case "breadcrumb":
-      case "column_list":
-      case "divider":
-        text = "No text available"
-        break
+      // case "pdf":
+      //   //text = getMediaSourceText(block)
+      //   break
+      // case "equation":
+      //   text = block.equation.expression
+      //   break
+      // case "link_preview":
+      //   text = block.link_preview.url
+      //   break
+      // case "synced_block":
+      //   // Provides ID for block it's synced with.
+      //   text = block.synced_block.synced_from
+      //     ? "This block is synced with a block with the following ID: " +
+      //       block.synced_block.synced_from[block.synced_block.synced_from.type]
+      //     : "Source sync block that another blocked is synced with."
+      //   break
+      // case "table":
+      //   // Only contains table properties.
+      //   // Fetch children blocks for more details.
+      //   text = "Table width: " + block.table.table_width
+      //   break
+      // case "table_of_contents":
+      //   // Does not include text from ToC; just the color
+      //   text = "ToC color: " + block.table_of_contents.color
+      //   break
+      // case "breadcrumb":
+      // case "column_list":
+      // case "divider":
+      //   text = "No text available"
+      //   break
       default:
-        console.log("Default block: " + block)
+        console.log("Block type not recognized: " + block.type)
         text = "[Needs case added]"
         break
     }
@@ -203,6 +222,8 @@ async function getTextFromBlock (block){
     case "bulleted_list_item": return [["li", text]];
     case "numbered_list_item": return [["li", text]];
     case "quote": return [["blockquote", text]];
+    case "image": return [["img", text]];
+    case "divider": return [["hr", text]];
     default: {console.log(block.type + "  -  " + text); return ["p", text]};
   }
 
@@ -246,7 +267,6 @@ async function changeBlocksForText(page, children, isToggle = false) {
     textBlocks = [["h1", page.child_page.title]]
   }else
   {
-    console.log(JSON.stringify(page))
     textBlocks = [["h2", page.toggle.rich_text[0].plain_text]]
   }
   
@@ -305,152 +325,6 @@ function chooseElementFromText(text){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Create new database. The page ID is set in the environment variables.
-app.post("/databases", async function (request, response) {
-  const pageId = process.env.NOTION_PAGE_ID
-  const title = request.body.dbName
-
-  console.log("NOTION_PAGE_ID: %s", pageId)
-  console.log("NOTION_KEY: %s", process.env.NOTION_KEY)
-
-  try {
-    const newDb = await notion.databases.create({
-      parent: {
-        type: "page_id",
-        page_id: pageId,
-      },
-      title: [
-        {
-          type: "text",
-          text: {
-            content: title,
-          },
-        },
-      ],
-      properties: {
-        Name: {
-          title: {},
-        },
-      },
-    })
-    response.json({ message: "success!", data: newDb })
-  } catch (error) {
-    response.json({ message: "error", error })
-  }
-})
-
-// Create new page. The database ID is provided in the web form.
-app.post("/pages", async function (request, response) {
-  const { dbID, pageName, header } = request.body
-
-  try {
-    const newPage = await notion.pages.create({
-      parent: {
-        type: "database_id",
-        database_id: dbID,
-      },
-      properties: {
-        Name: {
-          title: [
-            {
-              text: {
-                content: pageName,
-              },
-            },
-          ],
-        },
-      },
-      children: [
-        {
-          object: "block",
-          heading_2: {
-            rich_text: [
-              {
-                text: {
-                  content: header,
-                },
-              },
-            ],
-          },
-        },
-      ],
-    })
-    response.json({ message: "success!", data: newPage })
-  } catch (error) {
-    response.json({ message: "error", error })
-  }
-})
-
-// Create new block (page content). The page ID is provided in the web form.
-app.post("/blocks", async function (request, response) {
-  const { pageID, content } = request.body
-
-  try {
-    const newBlock = await notion.blocks.children.append({
-      block_id: pageID, // a block ID can be a page ID
-      children: [
-        {
-          // Use a paragraph as a default but the form or request can be updated to allow for other block types: https://developers.notion.com/reference/block#keys
-          paragraph: {
-            rich_text: [
-              {
-                text: {
-                  content: content,
-                },
-              },
-            ],
-          },
-        },
-      ],
-    })
-    response.json({ message: "success!", data: newBlock })
-  } catch (error) {
-    response.json({ message: "error", error })
-  }
-})
-
-// Create new page comments. The page ID is provided in the web form.
-app.post("/comments", async function (request, response) {
-  const { pageID, comment } = request.body
-
-  try {
-    const newComment = await notion.comments.create({
-      parent: {
-        page_id: pageID,
-      },
-      rich_text: [
-        {
-          text: {
-            content: comment,
-          },
-        },
-      ],
-    })
-    response.json({ message: "success!", data: newComment })
-  } catch (error) {
-    response.json({ message: "error", error })
-  }
-})
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, function () {

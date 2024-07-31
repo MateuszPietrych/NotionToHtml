@@ -11,7 +11,9 @@
     "bootstrap": "^5.3.3",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
-    "jspdf": "^2.5.1"
+    "html-to-pdf-js": "^0.9.3",
+    "jspdf": "^2.5.1",
+    "playwright": "^1.45.3"
   },
   "engines": {
     "node": "14.x"
