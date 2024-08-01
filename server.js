@@ -135,8 +135,6 @@ const getPlainTextFromRichText = richText => {
 async function getTextFromBlock(block) {
   let text
 
-  
-
   if(block.type == "child_page") {
     return await changeChildrenBlocksForTextListById(block.id);
   }

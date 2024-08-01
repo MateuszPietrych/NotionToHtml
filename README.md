@@ -48,3 +48,8 @@ On the frontend, this app includes:
 On the backend, this app includes:
 
 - `server.js`, which serves `index.html` and defines the endpoints used in the client-side JS code. All Notion public API usage (Notion SDK for JavaScript) is included in this file.
+
+
+### Limitations
+
+Notion have a lot of block of diffrent types and not all of the are covered here. There can be situation where something will not be transfer do html and pdf, or transfer in way that is not satysfing for you. To change that you need to change functions in server code: 'getHtmlTagByBlockType', 'getTextFromBlock', 'changeBlocksForText'. Sometimes also in client code function 'makeHtmlFromTexts'. 
