@@ -1,5 +1,5 @@
 {
-  "name": "web-form-with-express-example",
+  "name": "notion-to-html-and-pdf",
   "version": "1.0.0",
   "description": "Internal Notion intergration demo app using Express.js for a server.",
   "main": "server.js",
@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@notionhq/client": "^2.2.7",
-    "bootstrap": "^5.3.3",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
     "html-to-pdf-js": "^0.9.3",
@@ -20,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/makenotion/notion-sdk-js.git"
+    "url": "git+https://github.com/MateuszPietrych/NotionToHtmlAndPdf/server.git"
   },
   "author": "Jess Mitchell",
   "license": "MIT",
