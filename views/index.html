@@ -36,6 +36,20 @@
           line-height: 1.5em;
         }
 
+        main {
+          align-content: center;
+          justify-content: center;
+          align-items: center;
+        }
+
+        div.form-container {
+          position: absolute;
+          width: 400px;
+          left: 50%;
+          margin-bottom: 1em;
+          transform: translate(-50%, 0%);
+        }
+
         h1 {
           color: #7171d1;
           max-width: calc(100% - 5rem);
@@ -115,6 +129,8 @@
           font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
           line-height: 1.5;
           font-weight: lighter;
+          background-color: rgb(224, 224, 224);
+          padding: 4px;
         }
 
         li {
@@ -129,28 +145,29 @@
           font-size: 45px;
           font-family: Arial, Helvetica, sans-serif;
           font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-          
+          padding-top: 1em;
         }
 
         h2 {
           font-size: 41px;
           font-family: Arial, Helvetica, sans-serif;
           font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-          
+          padding-top: 0.8em;
         }
 
         h3 {
           font-size: 37px;
           font-family: Arial, Helvetica, sans-serif;
           font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-          
+          padding-top: 0.4em;
         }
 
         h4 {
           font-size: 33px;
           font-family: Arial, Helvetica, sans-serif;
           font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-          
+          padding-top: 0.3em;
+          padding-bottom: 0.2em;
         } 
 
         img {
@@ -162,14 +179,16 @@
   </head>
   <body>
     <main id="content">
-      <div id="form">
-        <h3>Config</h3>
+      <div id="mainForm" class="form-container">
         <form id="getPageForm">    <!-- databaseForm-->
-          <label for="dbName">Notion Page ID: </label>
-          <input type="text" id="dbName" />
-          <input type="submit" />
+          <label for="notionPageId">Notion Page ID: </label>
+          <input type="text" id="notionPageId" placeholder="9de9b95da97547fabf0cd0c274dca6b9" />
+
+          <label for="fileName">Export File Name: </label>
+          <input type="text" id="fileName" placeholder="GreatPdf">
+
+          <button class="btn btn-primary" type="submit" id="saveButton" value="Convert to Pdf" >Save as PDF</button>
         </form>
-        <button class="btn btn-primary" id="saveButton" value="Save as PDF" >Save as PDF</button>
       </div>
       
       <div class="container text-left">
@@ -189,29 +208,6 @@
       
      
     </main>
-  
- 
-    <script type="text/javascript" >
-
-      document.getElementById('saveButton').addEventListener('click', function() 
-      {
-        const element = document.getElementById('content');
-        const htmlContent = element.outerHTML;
-
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'page.html';
-        document.body.appendChild(a);
-        a.click();
-
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      });
-    </script>
-
 
   </body>
   
