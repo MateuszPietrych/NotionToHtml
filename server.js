@@ -102,28 +102,31 @@ async function changeChildrenBlocksForTextListById(id) {
 }
 
 async function changeBlocksForText(page, children, type = "page") {
+  let textBlocks = [];
 
-  let textBlocks = []
-
-  switch(type) {
+  switch (type) {
     case "page":
-      textBlocks = [["h1", page.child_page.title]]
-      break
+      textBlocks = [["h1", page.child_page.title]];
+      break;
     case "toggle":
-      textBlocks = [["h2", page.toggle.rich_text[0].plain_text]]
-      break
+      textBlocks = [["h2", page.toggle.rich_text[0].plain_text]];
+      break;
+    case "heading_1":
+    case "heading_2":
+    case "heading_3":
+      // title of the toggle heading itself
+      const title = getPlainTextFromRichText(page[type].rich_text || []);
+      textBlocks = [[getHtmlTagByBlockType(type), title]];
+      break;
     default:
-      break
+      break;
   }
 
-  
   for (let i = 0; i < children.length; i++) {
-    const texts = await getTextFromBlock(children[i])
-    for (let j = 0; j < texts.length; j++) {
-      textBlocks.push(texts[j])
-    }
+    const texts = await getTextFromBlock(children[i]);
+    for (let j = 0; j < texts.length; j++) textBlocks.push(texts[j]);
   }
-  return textBlocks
+  return textBlocks;
 }
 
 
@@ -132,19 +135,35 @@ const getPlainTextFromRichText = richText => {
   // Note: A page mention will return "Undefined" as the page name if the page has not been shared with the integration. See: https://developers.notion.com/reference/block#mention
 }
 
+
+const isToggleableHeading = (b) =>
+  ["heading_1","heading_2","heading_3"].includes(b.type) &&
+  b[b.type]?.is_toggleable;
+
 async function getTextFromBlock(block) {
   let text
 
-  if(block.type == "child_page") {
+   // child page
+  if (block.type === "child_page") {
     return await changeChildrenBlocksForTextListById(block.id);
   }
-  else if (block.type == "toggle" || block.type == "column_list" || block.type == "column") {
+
+  // toggleable containers (legacy toggle, columns, and toggle headings)
+  if (
+    block.type === "toggle" ||
+    block.type === "column_list" ||
+    block.type === "column" ||
+    isToggleableHeading(block)
+  ) {
     const page = await getPageById(block.id);
     const childrenBlockTexts = await getPageChildrenById(block.id);
-    const changeBlocksForTextList = await changeBlocksForText(page, childrenBlockTexts, block.type );
+    const changeBlocksForTextList = await changeBlocksForText(
+      page,
+      childrenBlockTexts,
+      block.type // pass the actual type (e.g., heading_2)
+    );
     return changeBlocksForTextList;
-  } 
-  
+  }
 
   // Check if block has rich text
   hasRichText = false;
